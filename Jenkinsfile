@@ -1,6 +1,13 @@
 
 pipeline {
     agent any
+    
+    options {
+    	skipDefaultCheckout()
+	disableConcurrentBuilds()
+    	timeout(time: 20, unit: 'MINUTES')
+    }
+
     stages {
         stage('Checkout the Code') {
             steps {
@@ -20,8 +27,12 @@ pipeline {
         stage('Verify the Application') {
             steps {
                 script {
-                    sh 'curl -f http://localhost:5001 || exit 1'
-                    sh 'curl -f http://localhost:5002 || exit 1'
+                    echo "Waiting for containers to start..."
+              	    sleep 5
+                    echo "Testing App1..."
+                    curl -v http://localhost:5001 || (docker logs $(docker ps -qf "name=app1") && exit 1)
+                    echo "Testing App2..."
+                    curl -v http://localhost:5002 || (docker logs $(docker ps -qf "name=app2") && exit 1)
                 }
             }
         }
